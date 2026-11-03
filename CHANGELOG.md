@@ -6,6 +6,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Raised the minimum Python to 3.11 (from 3.10). Python 3.10 reached end-of-life
+  for security fixes in October 2026 and no longer receives OpenSSL/`ssl`
+  backports; CI now tests 3.11–3.13.
+
 ## [0.1.0] - 2026-11-02
 
 ### Added

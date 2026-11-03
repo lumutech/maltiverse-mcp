@@ -37,7 +37,13 @@ uvx maltiverse-mcp
 Get a free API key from your [Maltiverse profile](https://maltiverse.com)
 ("Generate API Key").
 
-## Claude Code setup
+## Claude Code setup (the `claude` CLI)
+
+> **Claude Code ≠ Claude Desktop.** The `claude mcp` commands below configure
+> **Claude Code** (the CLI / IDE extension) and write to `~/.claude.json`. They do
+> **not** affect the **Claude Desktop** GUI app, which reads a different file — see
+> [Claude Desktop app](#claude-desktop-app-the-gui) for that. If you add a server
+> with `claude mcp add` and don't see it in the desktop app, this is why.
 
 ```bash
 # pip install (the console script must be on PATH)
@@ -48,21 +54,46 @@ claude mcp add --scope user --transport stdio maltiverse \
 claude mcp add --scope user --transport stdio maltiverse \
   --env MALTIVERSE_API_KEY=YOUR_KEY -- uvx maltiverse-mcp
 
-# if the script isn't on PATH (venvs, pyenv), use an absolute interpreter
+# if the script isn't on PATH (a project venv, pyenv, etc.), use an absolute path
 claude mcp add --scope user --transport stdio maltiverse \
-  --env MALTIVERSE_API_KEY=YOUR_KEY -- /abs/path/to/python -m maltiverse_mcp
+  --env MALTIVERSE_API_KEY=YOUR_KEY -- /abs/path/to/.venv/bin/maltiverse-mcp
+
+# ...or point at a specific interpreter and run the module
+claude mcp add --scope user --transport stdio maltiverse \
+  --env MALTIVERSE_API_KEY=YOUR_KEY -- /abs/path/to/.venv/bin/python -m maltiverse_mcp
 ```
 
 Then:
 
 ```bash
-claude mcp list          # shows: maltiverse  ✔ Connected
+claude mcp list              # shows: maltiverse  ✔ Connected
+claude mcp get maltiverse    # full config + connection status
+# inside a `claude` session, run /mcp to see the server and its tools
 ```
 
 > **Argument order matters.** `--env` accepts multiple `KEY=value` pairs, so never
 > put the server name *directly after* `--env`. Keep the name before `--env` (as
 > above), or put another flag in between. The `--` separates Claude's own flags
 > from the command that launches the server.
+
+### Choosing a scope
+
+`--scope` decides **where** the server is registered and therefore where it shows up:
+
+| Scope | Stored in | Visible in |
+| --- | --- | --- |
+| `user` | `~/.claude.json` | **every** Claude Code session, any directory (**recommended**) |
+| `local` | `~/.claude.json` (per-project) | only sessions started **in that one directory** |
+| `project` | committed `.mcp.json` | anyone who checks out the repo (see [Team setup](#team-setup-committed-mcpjson-no-secret)) |
+
+If you added it with `--scope local` and it "disappeared", you were likely running
+`claude` from a different directory. Re-add it with `--scope user`:
+
+```bash
+claude mcp remove maltiverse -s local   # drop the project-scoped one (if any)
+claude mcp add --scope user --transport stdio maltiverse \
+  --env MALTIVERSE_API_KEY=YOUR_KEY -- maltiverse-mcp
+```
 
 ### Rotating the key
 
@@ -87,6 +118,44 @@ Commit this and let each developer provide the key via their own environment:
   }
 }
 ```
+
+## Claude Desktop app (the GUI)
+
+The desktop app does **not** read `~/.claude.json` and is **not** configured by the
+`claude mcp` commands. It has its own config file:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Edit that file by hand (create it if missing) and add a `maltiverse` entry under
+`mcpServers`, **keeping any existing servers**:
+
+```json
+{
+  "mcpServers": {
+    "maltiverse": {
+      "command": "/abs/path/to/.venv/bin/maltiverse-mcp",
+      "env": { "MALTIVERSE_API_KEY": "YOUR_KEY" }
+    }
+  }
+}
+```
+
+- Use an **absolute** `command` path — the desktop app does not inherit your shell
+  `PATH`, so a bare `maltiverse-mcp` (or `uvx`) usually won't resolve. If you
+  installed into a venv, point at `.venv/bin/maltiverse-mcp`; its shebang selects
+  the right Python automatically. (On Windows use `.venv\\Scripts\\maltiverse-mcp.exe`.)
+- **macOS: do not put the venv under `~/Documents`, `~/Desktop`, or `~/Downloads`.**
+  The desktop app has no privacy (TCC) permission for those folders, so the spawned
+  Python fails with `PermissionError: [Errno 1] Operation not permitted: .../pyvenv.cfg`
+  and the server shows "Server disconnected". Install into a venv elsewhere (e.g.
+  `~/.venvs/maltiverse-mcp`) and point `command` there — or grant the app access under
+  System Settings → Privacy & Security → Files and Folders / Full Disk Access.
+- This is plain JSON — there is no `--transport` / `--env` / `--` syntax here; use
+  `command`, optional `args`, and `env`.
+- After saving, **fully quit** the app (⌘Q on macOS / right-click → Quit in the tray
+  on Windows — closing the window is not enough) and reopen it. The server appears
+  under the tools/🔌 menu.
 
 ## Environment variables
 
@@ -117,6 +186,11 @@ claude mcp get maltiverse        # inspect config + connection status
 - **"Failed to connect"** almost always means the `maltiverse-mcp` console script
   isn't on `PATH`. Use the absolute-interpreter form above
   (`-- /abs/path/to/python -m maltiverse_mcp`).
+- **Claude Desktop shows "Server disconnected"** right after starting, with
+  `PermissionError: ... Operation not permitted: .../pyvenv.cfg` in its logs — the
+  venv is under a macOS-protected folder (`~/Documents`/`~/Desktop`/`~/Downloads`).
+  See [Claude Desktop app](#claude-desktop-app-the-gui): install the venv elsewhere
+  (e.g. `~/.venvs/maltiverse-mcp`) or grant the app Files-and-Folders access.
 
 ## Development
 

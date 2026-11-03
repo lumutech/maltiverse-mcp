@@ -10,3 +10,8 @@ build/
 .pytest_cache/
 .coverage
 htmlcov/
+.env
+*.env
+.envrc
+.claude.json
+claude_desktop_config.json
