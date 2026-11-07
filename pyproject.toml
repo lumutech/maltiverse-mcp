@@ -50,9 +50,9 @@ dev = [
 maltiverse-mcp = "maltiverse_mcp.server:main"
 
 [project.urls]
-Homepage = "https://github.com/maltiverse/maltiverse-mcp"
-Issues = "https://github.com/maltiverse/maltiverse-mcp/issues"
-Changelog = "https://github.com/maltiverse/maltiverse-mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/lumutech/maltiverse-mcp"
+Issues = "https://github.com/lumutech/maltiverse-mcp/issues"
+Changelog = "https://github.com/lumutech/maltiverse-mcp/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maltiverse_mcp"]
